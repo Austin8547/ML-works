@@ -54,16 +54,50 @@ def generate_forecast(df, features):
         
         current_data = pd.concat([current_data, pd.DataFrame([new_row])], ignore_index=True)
         
-        # 4. RECALCULATE INDICATORS (Crucial Step)
-        # The model needs updated SMA, MACD, and Lags based on our NEW predicted price
-        current_data['Close_lag1'] = current_data['Close'].shift(1)
-        current_data['Close_lag2'] = current_data['Close'].shift(2)
-        current_data['Close_lag3'] = current_data['Close'].shift(3)
-        current_data['Close_lag5'] = current_data['Close'].shift(5)
+        # 4. RECALCULATE INDICATORS (Crucial Step: Incremental Updates)
+        # 4.1 Lags
+        current_data.loc[current_data.index[-1], 'Close_lag1'] = current_data['Close'].iloc[-2]
+        current_data.loc[current_data.index[-1], 'Close_lag2'] = current_data['Close'].iloc[-3]
+        current_data.loc[current_data.index[-1], 'Close_lag3'] = current_data['Close'].iloc[-4]
+        current_data.loc[current_data.index[-1], 'Close_lag5'] = current_data['Close'].iloc[-6]
         
-        current_data['SMA_5'] = current_data['Close'].rolling(window=5).mean()
-        # Note: For speed in the loop, we use simple SMA for EMA/MACD proxies or 
-        # you can call your full processor function here if it's fast.
+        # 4.2 SMA (Simple Moving Average) - Re-calculate on the window
+        # Efficiently calculate only the last value
+        current_data.loc[current_data.index[-1], 'SMA_5'] = current_data['Close'].tail(5).mean()
+
+        # 4.3 EMA (Exponential Moving Average) - Incremental Calculation
+        # Formula: EMA_today = (Value_today * alpha) + (EMA_yesterday * (1 - alpha))
+        # alpha = 2 / (span + 1)
+        # Note: We use the *predicted* close for the calculation
+        
+        def calculate_next_ema(series_name, span, current_price):
+            alpha = 2 / (span + 1)
+            prev_ema = current_data[series_name].iloc[-2] # The value before the new row
+            new_ema = (current_price * alpha) + (prev_ema * (1 - alpha))
+            return new_ema
+
+        current_data.loc[current_data.index[-1], 'EMA_20'] = calculate_next_ema('EMA_20', 20, pred_price)
+        
+        # 4.4 MACD Components
+        # We need to maintain EMA_12 and EMA_26 to calculate MACD
+        # These columns were added to processor.py to ensure they exist
+        new_ema_12 = calculate_next_ema('EMA_12', 12, pred_price)
+        new_ema_26 = calculate_next_ema('EMA_26', 26, pred_price)
+        
+        current_data.loc[current_data.index[-1], 'EMA_12'] = new_ema_12
+        current_data.loc[current_data.index[-1], 'EMA_26'] = new_ema_26
+        
+        new_macd = new_ema_12 - new_ema_26
+        current_data.loc[current_data.index[-1], 'MACD'] = new_macd
+        
+        # 4.5 MACD Signal (EMA of MACD)
+        # This is an EMA of the MACD line itself
+        prev_signal = current_data['MACD_Signal'].iloc[-2]
+        alpha_signal = 2 / (9 + 1)
+        new_signal = (new_macd * alpha_signal) + (prev_signal * (1 - alpha_signal))
+        
+        current_data.loc[current_data.index[-1], 'MACD_Signal'] = new_signal
+        current_data.loc[current_data.index[-1], 'MACD_Hist'] = new_macd - new_signal
         
         # Record result
         forecasts.append({'Date': next_date, 'Predicted_Close': pred_price})
@@ -97,4 +131,16 @@ def plot_forecast(historical_df, forecast_df):
     save_path = os.path.join(config.GRAPH_DIR, "9_final_forecast.png")
     plt.savefig(save_path)
     plt.close()
+    save_path = os.path.join(config.FORECAST_GRAPH_DIR, "9_final_forecast.png")
+    plt.savefig(save_path)
+    plt.close()
     print(f"Forecast chart saved to {save_path}")
+
+def save_forecast_csv(forecast_df):
+    """
+    Saves the forecast data to a CSV file in the reports directory.
+    """
+    os.makedirs(config.REPORT_DIR, exist_ok=True)
+    report_path = os.path.join(config.REPORT_DIR, f"{config.TICKER}_60_day_forecast.csv")
+    forecast_df.to_csv(report_path, index=False)
+    print(f"Forecast results saved to {report_path}")

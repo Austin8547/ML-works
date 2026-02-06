@@ -12,14 +12,25 @@ def train_model(df):
     dataset, and saves the artifacts.
     """
     # 1. Feature Selection
+    # 1. Feature Selection
+    # REMOVED: 'Open', 'High', 'Low' because they are contemporaneous with the target in the original setup,
+    # and we don't know them for tomorrow.
+    # We rely on technical indicators and lags which summarize the state at time 't'.
     features = [
-        'Open', 'High', 'Low', 'Volume', 
+        'Volume', 
         'Close_lag1', 'Close_lag2', 'Close_lag3', 'Close_lag5',
-        'SMA_5', 'EMA_20', 'MACD', 'MACD_Signal', 'MACD_Hist'
+        'SMA_5', 'EMA_20', 'MACD', 'MACD_Signal', 'MACD_Hist',
+        'EMA_12', 'EMA_26' # Added since we use them in forecaster
     ]
     
-    X = df[features]
-    y = df[config.TARGET_COL]
+    # Target: Predict NEXT day's close
+    df['Target_Next_Close'] = df[config.TARGET_COL].shift(-1)
+    
+    # Drop the last row because it has no target for tomorrow
+    df_train = df.dropna(subset=['Target_Next_Close']).copy()
+    
+    X = df_train[features]
+    y = df_train['Target_Next_Close']
 
     # 2. Scaling
     scaler = StandardScaler()

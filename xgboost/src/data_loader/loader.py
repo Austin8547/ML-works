@@ -26,7 +26,9 @@ def download_stock_data(ticker=None, period=None, interval=None):
         return None
 
 
-def save_data(df, path=config.FULL_DATA_PATH):
+def save_data(df, path=None):
+    if path is None:
+        path = config.FULL_DATA_PATH
     
     # Ensure the directory exists
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -34,10 +36,13 @@ def save_data(df, path=config.FULL_DATA_PATH):
     print(f"Data saved successfully to {path}")
 
 
-def load_local_data(path=config.FULL_DATA_PATH):
+def load_local_data(path=None):
     """
     Loads data from a local CSV file.
     """
+    if path is None:
+        path = config.FULL_DATA_PATH
+
     if os.path.exists(path):
         print(f"Loading data from {path}")
         return pd.read_csv(path)

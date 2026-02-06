@@ -36,9 +36,9 @@ def create_features(df, lags=config.LAG_DAYS):
     df['EMA_20'] = df[target].ewm(span=20, adjust=False).mean()
     
     # 3. MACD
-    ema_12 = df[target].ewm(span=12, adjust=False).mean()
-    ema_26 = df[target].ewm(span=26, adjust=False).mean()
-    df['MACD'] = ema_12 - ema_26
+    df['EMA_12'] = df[target].ewm(span=12, adjust=False).mean()
+    df['EMA_26'] = df[target].ewm(span=26, adjust=False).mean()
+    df['MACD'] = df['EMA_12'] - df['EMA_26']
     df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
     df['MACD_Hist'] = df['MACD'] - df['MACD_Signal']
     

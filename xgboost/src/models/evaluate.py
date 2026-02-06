@@ -12,8 +12,17 @@ def validate_performance(df, features):
     """
     Performs Time Series CV and plots Training vs Validation Learning Curves.
     """
-    X = df[features]
-    y = df[config.TARGET_COL]
+    # Align features with trainer.py
+    # Note: caller ('main.py') passes 'features' list, but we should override or ensure it's correct.
+    # Ideally, we define features in one place, but for now let's respect the argument IF it matches new logic.
+    # However, to be safe, we re-derive X and y here similar to trainer.py
+
+    df = df.copy()
+    df['Target_Next_Close'] = df[config.TARGET_COL].shift(-1)
+    df = df.dropna(subset=['Target_Next_Close'])
+
+    X = df[features] # Argument 'features' must be the new list passed from main
+    y = df['Target_Next_Close']
     
     tscv = TimeSeriesSplit(n_splits=config.TSC_SPLITS)
     rmse_scores = []
@@ -64,7 +73,7 @@ def plot_learning_curve(results, fold_num):
     plt.legend()
     plt.grid(True, alpha=0.1)
     
-    plt.savefig(os.path.join(config.GRAPH_DIR, f"learning_curve_fold_{fold_num}.png"))
+    plt.savefig(os.path.join(config.VAL_GRAPH_DIR, f"learning_curve_fold_{fold_num}.png"))
     plt.close()
 
 def plot_validation_summary(rmse_scores):
@@ -80,7 +89,7 @@ def plot_validation_summary(rmse_scores):
     plt.title("Cross-Validation RMSE Summary")
     plt.ylabel("RMSE Score")
     plt.legend()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "8_validation_rmse_summary.png"))
+    plt.savefig(os.path.join(config.VAL_GRAPH_DIR, "8_validation_rmse_summary.png"))
     plt.close()
 
 def plot_feature_importance(model, features):
@@ -93,7 +102,7 @@ def plot_feature_importance(model, features):
     sns.barplot(x=feat_imp.values, y=feat_imp.index, hue=feat_imp.index, palette="viridis", legend=False)
     plt.title("Feature Importance: Indicators & Lags", color='#00FFD1')
     
-    save_path = os.path.join(config.GRAPH_DIR, "7_feature_importance.png")
+    save_path = os.path.join(config.VAL_GRAPH_DIR, "7_feature_importance.png")
     plt.savefig(save_path)
     plt.close()
     print(f"Importance chart saved to {save_path}")

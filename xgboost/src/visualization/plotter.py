@@ -26,7 +26,7 @@ def plot_all_charts(df):
     sns.lineplot(data=df, x='Date', y='Close', color='#00FFD1', linewidth=2, ax=ax)
     apply_custom_style(ax, f"{config.TICKER} - Performance")
     plt.tight_layout()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "1_daily_close.png"))
+    plt.savefig(os.path.join(config.EDA_GRAPH_DIR, "1_daily_close.png"))
     plt.close()
 
     # 2. Volume Chart
@@ -36,7 +36,7 @@ def plot_all_charts(df):
     ax.xaxis.set_major_locator(plt.MaxNLocator(10)) 
     apply_custom_style(ax, "Market Liquidity (Volume)")
     plt.tight_layout()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "2_volume_chart.png"))
+    plt.savefig(os.path.join(config.EDA_GRAPH_DIR, "2_volume_chart.png"))
     plt.close()
 
     # 3. EMA and SMA with Daily Price
@@ -47,7 +47,7 @@ def plot_all_charts(df):
     apply_custom_style(ax, "Trend Analysis: SMA vs EMA")
     plt.legend(facecolor='black', edgecolor='none')
     plt.tight_layout()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "3_ma_trends.png"))
+    plt.savefig(os.path.join(config.EDA_GRAPH_DIR, "3_ma_trends.png"))
     plt.close()
 
     # 4. MACD and Daily Price (Subplots)
@@ -62,7 +62,7 @@ def plot_all_charts(df):
     ax2.fill_between(df['Date'], df['MACD_Hist'], 0, where=(df['MACD_Hist'] < 0), color='#FF007A', alpha=0.4)
     apply_custom_style(ax2, "") # Subtitle handled by ax1
     plt.tight_layout()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "4_macd_analysis.png"))
+    plt.savefig(os.path.join(config.EDA_GRAPH_DIR, "4_macd_analysis.png"))
     plt.close()
 
     # 5 & 6. Distributions (Combined into one figure for cleaner reports)
@@ -75,7 +75,7 @@ def plot_all_charts(df):
     apply_custom_style(ax2, "Price Density")
     
     plt.tight_layout()
-    plt.savefig(os.path.join(config.GRAPH_DIR, "5_6_distributions.png"))
+    plt.savefig(os.path.join(config.EDA_GRAPH_DIR, "5_6_distributions.png"))
     plt.close()
 
-    print(f"Modernized charts saved to {config.GRAPH_DIR}")
+    print(f"Modernized charts saved to {config.EDA_GRAPH_DIR}")

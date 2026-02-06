@@ -18,7 +18,22 @@ def run_visualization(df):
 def main():
     # 0. Infrastructure Check
     os.makedirs(config.MODEL_DIR, exist_ok=True)
-    os.makedirs(config.GRAPH_DIR, exist_ok=True)
+    os.makedirs(config.EDA_GRAPH_DIR, exist_ok=True)
+    os.makedirs(config.VAL_GRAPH_DIR, exist_ok=True)
+    os.makedirs(config.FORECAST_GRAPH_DIR, exist_ok=True)
+    
+    
+    # --- Interactivity ---
+    print("\nAvailable Stocks (NIFTY 50):")
+    cols = 5
+    tickers = config.NIFTY50_TICKERS
+    for i in range(0, len(tickers), cols):
+        print("  ".join(f"{t:<12}" for t in tickers[i: i+cols]))
+        
+    user_input = input(f"\nEnter stock symbol (default {config.TICKER}): ").strip()
+    
+    if user_input:
+        config.update_config(user_input)
     
     print(f"--- Starting Pipeline for {config.TICKER} ---")
     
@@ -39,10 +54,12 @@ def main():
             run_visualization(df_processed)
             
             # 5. Define ML Features
+            # MUST MATCH trainer.py logic
             features = [
-                'Open', 'High', 'Low', 'Volume', 
+                'Volume', 
                 'Close_lag1', 'Close_lag2', 'Close_lag3', 'Close_lag5',
-                'SMA_5', 'EMA_20', 'MACD', 'MACD_Signal', 'MACD_Hist'
+                'SMA_5', 'EMA_20', 'MACD', 'MACD_Signal', 'MACD_Hist',
+                'EMA_12', 'EMA_26'
             ]
             
             # 6. EVALUATION (Validation)
@@ -58,11 +75,14 @@ def main():
             print("\n--- Generating 60-Day Prediction ---")
             forecast_df = forecaster.generate_forecast(df_processed, features)
             
+            # Save Forecast to CSV
+            forecaster.save_forecast_csv(forecast_df)
+            
             # 10. PLOT FINAL FORECAST
             forecaster.plot_forecast(df_processed, forecast_df)
             
             print("\n--- Pipeline Complete ---")
-            print(f"All reports and the 60-day trend chart are in {config.GRAPH_DIR}")
+            print(f"All reports and charts are in {config.GRAPH_DIR} subfolders")
             print(f"Predicted Price for 60 days from now: ₹{forecast_df['Predicted_Close'].iloc[-1]:.2f}")
             
         else:
