@@ -5,7 +5,8 @@ from src.data_processing import processor
 from src.visualization import plotter
 from src.models import trainer
 from src.models import evaluate
-from src.models import forecaster # Ensure this is imported
+from src.models import forecaster
+from src.models import analyst
 
 def run_visualization(df):
     print("\n--- Generating Modernized Seaborn Charts ---")
@@ -15,25 +16,19 @@ def run_visualization(df):
     except Exception as e:
         print(f"An error occurred during visualization: {e}")
 
-def main():
+def run_pipeline(ticker=None):
+    """
+    Executes the full analysis pipeline for the given ticker.
+    If ticker is None, uses the one currently in config.
+    """
+    if ticker:
+        config.update_config(ticker)
+        
     # 0. Infrastructure Check
     os.makedirs(config.MODEL_DIR, exist_ok=True)
     os.makedirs(config.EDA_GRAPH_DIR, exist_ok=True)
     os.makedirs(config.VAL_GRAPH_DIR, exist_ok=True)
     os.makedirs(config.FORECAST_GRAPH_DIR, exist_ok=True)
-    
-    
-    # --- Interactivity ---
-    print("\nAvailable Stocks (NIFTY 50):")
-    cols = 5
-    tickers = config.NIFTY50_TICKERS
-    for i in range(0, len(tickers), cols):
-        print("  ".join(f"{t:<12}" for t in tickers[i: i+cols]))
-        
-    user_input = input(f"\nEnter stock symbol (default {config.TICKER}): ").strip()
-    
-    if user_input:
-        config.update_config(user_input)
     
     print(f"--- Starting Pipeline for {config.TICKER} ---")
     
@@ -75,20 +70,42 @@ def main():
             print("\n--- Generating 60-Day Prediction ---")
             forecast_df = forecaster.generate_forecast(df_processed, features)
             
+            # --- NEW: 10. ANALYST INSIGHTS ---
+            print("\n--- Generating Analyst Report ---")
+            insights = analyst.generate_insights(df_processed)
+            print(f"Analyst Signal: {insights['signal']}")
+            
             # Save Forecast to CSV
             forecaster.save_forecast_csv(forecast_df)
             
-            # 10. PLOT FINAL FORECAST
+            # 11. PLOT FINAL FORECAST
             forecaster.plot_forecast(df_processed, forecast_df)
             
             print("\n--- Pipeline Complete ---")
             print(f"All reports and charts are in {config.GRAPH_DIR} subfolders")
             print(f"Predicted Price for 60 days from now: ₹{forecast_df['Predicted_Close'].iloc[-1]:.2f}")
             
+            return forecast_df, insights
+            
         else:
             print("Processing failed: Resulting dataframe is empty.")
+            return None, None
     else:
         print("Failed to download data.")
+        return None, None
+
+def main():
+    # --- Interactivity ---
+    print("\nAvailable Stocks (NIFTY 50):")
+    cols = 5
+    tickers = config.NIFTY50_TICKERS
+    for i in range(0, len(tickers), cols):
+        print("  ".join(f"{t:<12}" for t in tickers[i: i+cols]))
+        
+    user_input = input(f"\nEnter stock symbol (default {config.TICKER}): ").strip()
+    
+    # Run the pipeline
+    run_pipeline(user_input if user_input else None)
 
 if __name__ == "__main__":
     main()

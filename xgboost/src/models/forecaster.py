@@ -128,9 +128,8 @@ def plot_forecast(historical_df, forecast_df):
     plt.legend()
     plt.grid(True, alpha=0.1)
     
-    save_path = os.path.join(config.GRAPH_DIR, "9_final_forecast.png")
-    plt.savefig(save_path)
-    plt.close()
+    plt.grid(True, alpha=0.1)
+    
     save_path = os.path.join(config.FORECAST_GRAPH_DIR, "9_final_forecast.png")
     plt.savefig(save_path)
     plt.close()

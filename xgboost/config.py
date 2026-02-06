@@ -1,7 +1,8 @@
 import os
 
 
-BASE_DATA_DIR = "xgboost/data"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+BASE_DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 RAW_DATA_PATH = os.path.join(BASE_DATA_DIR, "stock_price")
 GRAPH_DIR = os.path.join(BASE_DATA_DIR, "graphs")
 EDA_GRAPH_DIR = os.path.join(GRAPH_DIR, "eda_graphs")
