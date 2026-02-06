@@ -6,3 +6,5 @@ matplotlib
 yfinance
 scikit-learn
 pandas-ta
+streamlit
+joblib
